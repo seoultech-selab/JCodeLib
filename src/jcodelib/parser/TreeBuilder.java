@@ -28,7 +28,7 @@ public class TreeBuilder {
 	}
 
 	public static CompilationUnit getCompilationUnit(String source) {
-		ASTParser parser = ASTParser.newParser(AST.JLS14);
+		ASTParser parser = ASTParser.newParser(AST.JLS11);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(source.toCharArray());
 		CompilationUnit cu = (CompilationUnit)parser.createAST(null);

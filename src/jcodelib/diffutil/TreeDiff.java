@@ -18,6 +18,7 @@ import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
 import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
 import ch.uzh.ifi.seal.changedistiller.model.entities.SourceCodeChange;
+import edu.fdu.se.cldiff.CLDiffLocal;
 import file.FileIOManager;
 import jcodelib.element.GTAction;
 import jcodelib.util.CodeUtils;
@@ -188,5 +189,10 @@ public class TreeDiff {
 		}
 
 		return null;
+	}
+	
+	public static void runCLDiff(String repo, String commitId, String outputDir) {		
+        CLDiffLocal CLDiffLocal = new CLDiffLocal();
+        CLDiffLocal.run(commitId,repo,outputDir);
 	}
 }
