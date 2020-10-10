@@ -54,22 +54,16 @@ public class TreeDiff {
 		return filteredChanges;
 	}
 
-	public static List<com.github.gumtreediff.actions.model.Action> diffGumTree(File srcFile, File dstFile){
+	public static List<com.github.gumtreediff.actions.model.Action> diffGumTree(File srcFile, File dstFile) throws Exception {
 		List<com.github.gumtreediff.actions.model.Action> actions = null;
-		try {
-			com.github.gumtreediff.client.Run.initGenerators();
-			ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
-			ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
-			Matcher m = Matchers.getInstance().getMatcher(src, dst); // retrieve the default matcher
-			m.match();
-			ActionGenerator g = new ActionGenerator(src, dst, m.getMappings());
-			g.generate();
-			actions = g.getActions();
-		} catch (UnsupportedOperationException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		com.github.gumtreediff.client.Run.initGenerators();
+		ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
+		ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
+		Matcher m = Matchers.getInstance().getMatcher(src, dst); // retrieve the default matcher
+		m.match();
+		ActionGenerator g = new ActionGenerator(src, dst, m.getMappings());
+		g.generate();
+		actions = g.getActions();
 
 		return actions;
 	}
@@ -93,32 +87,25 @@ public class TreeDiff {
 		return gtActions;
 	}
 
-	public static List<GTAction> diffGumTreeWithGrouping(File srcFile, File dstFile){
+	public static List<GTAction> diffGumTreeWithGrouping(File srcFile, File dstFile) throws Exception {
 		List<GTAction> gtActions = new ArrayList<GTAction>();
-		try {
-			com.github.gumtreediff.client.Run.initGenerators();
-			ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
-			ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
-			Matcher m = Matchers.getInstance().getMatcher(src, dst); // retrieve the default matcher
-			m.match();
-			ActionGenerator g = new ActionGenerator(src, dst, m.getMappings());
-			g.generate();
-			List<com.github.gumtreediff.actions.model.Action> actions = g.getActions();
-			CompilationUnit srcCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(srcFile));
-			CompilationUnit dstCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(dstFile));
-			//Group actions.
-			while(actions.size() > 0){
-				Action action = actions.get(0);
-				GTAction gtAction = new GTAction(action, srcCu, dstCu);
-				gtAction = attachActions(gtAction, actions, srcCu, dstCu);
-				gtActions.add(gtAction);
-			}
-		} catch (UnsupportedOperationException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		com.github.gumtreediff.client.Run.initGenerators();
+		ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
+		ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
+		Matcher m = Matchers.getInstance().getMatcher(src, dst); // retrieve the default matcher
+		m.match();
+		ActionGenerator g = new ActionGenerator(src, dst, m.getMappings());
+		g.generate();
+		List<com.github.gumtreediff.actions.model.Action> actions = g.getActions();
+		CompilationUnit srcCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(srcFile));
+		CompilationUnit dstCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(dstFile));
+		//Group actions.
+		while(actions.size() > 0){
+			Action action = actions.get(0);
+			GTAction gtAction = new GTAction(action, srcCu, dstCu);
+			gtAction = attachActions(gtAction, actions, srcCu, dstCu);
+			gtActions.add(gtAction);
 		}
-
 		return gtActions;
 	}
 
@@ -190,9 +177,13 @@ public class TreeDiff {
 
 		return null;
 	}
-	
-	public static void runCLDiff(String repo, String commitId, String outputDir) {		
-        CLDiffLocal CLDiffLocal = new CLDiffLocal();
-        CLDiffLocal.run(commitId,repo,outputDir);
+
+	public static void runCLDiff(File srcFile, File dstFile) {
+
+	}
+
+	public static void runCLDiff(String repo, String commitId, String outputDir) {
+		CLDiffLocal CLDiffLocal = new CLDiffLocal();
+		CLDiffLocal.run(commitId,repo,outputDir);
 	}
 }
