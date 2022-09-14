@@ -48,8 +48,12 @@ public class CodeUtils {
 		return cu;
 	}
 
+	public static String getTypeName(int type){
+		return type == -1 ? "root" : ASTNode.nodeClassForType(type).getSimpleName();
+	}
+
 	public static Set<Integer> getCommentLineNumbers(File javaFile){
-		Set<Integer> commentLines = new HashSet<Integer>();
+		Set<Integer> commentLines = new HashSet<>();
 		int startLine = 0;
 		int endLine = 0;
 		String[] lines = null;
@@ -93,7 +97,7 @@ public class CodeUtils {
 	}
 
 	public static List<Line> stripComments(String[] codeLines, Set<Integer> commentLineNumbers) {
-		List<Line> lines = new ArrayList<Line>();
+		List<Line> lines = new ArrayList<>();
 		for (int lineNum = 1; lineNum <= codeLines.length; lineNum++) {
 			//if there exists a non-comment line, add a graft for the line.
 			if (!commentLineNumbers.contains(lineNum)){
@@ -183,7 +187,7 @@ public class CodeUtils {
 	}
 
 	public static List<Line> normalizeLines(List<Line> lines) {
-		List<Line> normalized = new ArrayList<Line>();
+		List<Line> normalized = new ArrayList<>();
 		Line normalizedLine = null;
 		for(Line line : lines){
 			normalizedLine = normalizeLine(line);

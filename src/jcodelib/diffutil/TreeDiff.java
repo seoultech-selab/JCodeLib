@@ -3,7 +3,10 @@ package jcodelib.diffutil;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
@@ -17,15 +20,22 @@ import com.github.gumtreediff.tree.ITree;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
 import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
+import ch.uzh.ifi.seal.changedistiller.model.classifiers.SourceRange;
+import ch.uzh.ifi.seal.changedistiller.model.entities.Delete;
+import ch.uzh.ifi.seal.changedistiller.model.entities.Insert;
+import ch.uzh.ifi.seal.changedistiller.model.entities.Move;
 import ch.uzh.ifi.seal.changedistiller.model.entities.SourceCodeChange;
+import ch.uzh.ifi.seal.changedistiller.model.entities.Update;
 import edu.fdu.se.cldiff.CLDiffLocal;
 import file.FileIOManager;
+import jcodelib.element.CDChange;
 import jcodelib.element.GTAction;
 import jcodelib.util.CodeUtils;
 import script.ScriptGenerator;
 import script.model.EditScript;
 import tree.Tree;
 import tree.TreeBuilder;
+import tree.TreeNode;
 
 public class TreeDiff {
 
@@ -42,7 +52,7 @@ public class TreeDiff {
 		}
 
 		List<SourceCodeChange> changes = distiller.getSourceCodeChanges();
-		List<SourceCodeChange> filteredChanges = new ArrayList<SourceCodeChange>();
+		List<SourceCodeChange> filteredChanges = new ArrayList<>();
 		if(changes != null) {
 			for(SourceCodeChange change : changes) {
 				if(!change.getChangedEntity().getType().isComment()){
@@ -52,6 +62,83 @@ public class TreeDiff {
 		}
 
 		return filteredChanges;
+	}
+
+	public static List<CDChange> diffCDChanges(File left, File right) throws IOException {
+		List<SourceCodeChange> changes = diffChangeDistiller(left, right);
+		return convertSourceCodeChanges(changes);
+	}
+
+	public static List<CDChange> convertSourceCodeChanges(List<SourceCodeChange> changes) throws IOException {
+		//Convert CDChange with new change type.
+		List<CDChange> converted = new ArrayList<>();
+		for(SourceCodeChange scc : changes) {
+			SourceRange range = scc.getChangedEntity().getSourceRange();
+			String changeType = scc.getChangeType().toString();
+			if(scc instanceof Insert) {
+				changeType = CDChange.INSERT;
+			}else if(scc instanceof Delete) {
+				changeType = CDChange.DELETE;
+			}else if(scc instanceof Move) {
+				changeType = CDChange.MOVE;
+			}else if(scc instanceof Update) {
+				changeType = CDChange.UPDATE;
+			}
+			converted.add(new CDChange(changeType, scc.getChangedEntity().getType().toString(),
+					range.getStart(), range.getEnd()));
+		}
+		return converted;
+	}
+
+	public static void updateEntityTypes(File leftFile, File rightFile, List<CDChange> changes) throws IOException {
+		//Create maps for start/end positions.
+		Tree left = TreeBuilder.buildTreeFromFile(leftFile);
+		Tree right = TreeBuilder.buildTreeFromFile(rightFile);
+		Map<Integer, TreeMap<Integer, String>> leftTypeMap = createNodeTypeMap(left.getRoot());
+		Map<Integer, TreeMap<Integer, String>> rightTypeMap = createNodeTypeMap(right.getRoot());
+
+		//Search for corresponding TreeNode using start/end positions.
+		for(CDChange c : changes) {
+			//Check left or right based on change type. If missing, use Unknown# + original.
+			String entityType = null;
+			switch(c.getChangeType()) {
+			case CDChange.INSERT:
+				entityType = findClosestEntity(rightTypeMap, c.getStartPos(), c.getEndPos());
+				break;
+			case CDChange.DELETE:
+			case CDChange.MOVE:
+			case CDChange.UPDATE:
+				entityType = findClosestEntity(leftTypeMap, c.getStartPos(), c.getEndPos());
+			}
+			c.setEntityType(entityType == null ? "Unknown#"+c.getEntityType() : entityType);
+		}
+	}
+
+	private static String findClosestEntity(Map<Integer, TreeMap<Integer, String>> map, int start, int end) {
+		//Find an entity which has the same start position and closest end position.
+		if(!map.containsKey(start))
+			return null;
+		Integer closest = map.get(start).ceilingKey(end);
+		return closest != null ? map.get(start).get(closest) : null;
+	}
+
+	private static Map<Integer, TreeMap<Integer, String>> createNodeTypeMap(TreeNode n) {
+		Map<Integer, TreeMap<Integer, String>> map = new HashMap<>();
+		createNodeTypeMap(map, n);
+		return map;
+	}
+
+	private static void createNodeTypeMap(Map<Integer, TreeMap<Integer, String>> map, TreeNode n) {
+		if(n != null && n.getASTNode() != null) {
+			int start = n.getStartPosition();
+			int end = n.getEndPosition();
+			if(!map.containsKey(start))
+				map.put(start, new TreeMap<>());
+			map.get(start).put(end, CodeUtils.getTypeName(n.getType()));
+		}
+		for(TreeNode child : n.children) {
+			createNodeTypeMap(map, child);
+		}
 	}
 
 	public static List<com.github.gumtreediff.actions.model.Action> diffGumTree(File srcFile, File dstFile) throws Exception {
@@ -69,7 +156,7 @@ public class TreeDiff {
 	}
 
 	public static List<GTAction> groupGumTreeActions(File srcFile, File dstFile, List<com.github.gumtreediff.actions.model.Action> actions) {
-		List<GTAction> gtActions = new ArrayList<GTAction>();
+		List<GTAction> gtActions = new ArrayList<>();
 		try {
 			CompilationUnit srcCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(srcFile));
 			CompilationUnit dstCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(dstFile));
@@ -88,7 +175,7 @@ public class TreeDiff {
 	}
 
 	public static List<GTAction> diffGumTreeWithGrouping(File srcFile, File dstFile) throws Exception {
-		List<GTAction> gtActions = new ArrayList<GTAction>();
+		List<GTAction> gtActions = new ArrayList<>();
 		com.github.gumtreediff.client.Run.initGenerators();
 		ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
 		ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
@@ -135,8 +222,8 @@ public class TreeDiff {
 		} while (parent != null);
 
 		//Top-down search for children.
-		List<GTAction> targetActions = new ArrayList<GTAction>();
-		List<GTAction> attachedActions = new ArrayList<GTAction>();
+		List<GTAction> targetActions = new ArrayList<>();
+		List<GTAction> attachedActions = new ArrayList<>();
 		targetActions.add(root);
 		actions.remove(root.action);
 		do {
@@ -167,8 +254,8 @@ public class TreeDiff {
 
 	public static EditScript diffLAS(File srcFile, File dstFile){
 		try {
-			Tree before = TreeBuilder.buildTreeFromFile(srcFile);
-			Tree after = TreeBuilder.buildTreeFromFile(dstFile);
+			Tree before = tree.TreeBuilder.buildTreeFromFile(srcFile);
+			Tree after = tree.TreeBuilder.buildTreeFromFile(dstFile);
 			EditScript script = ScriptGenerator.generateScript(before, after);
 			return script;
 		} catch (IOException e) {
