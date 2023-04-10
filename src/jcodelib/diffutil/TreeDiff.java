@@ -10,12 +10,13 @@ import java.util.TreeMap;
 
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
-import com.github.gumtreediff.actions.ActionGenerator;
+import com.github.gumtreediff.actions.EditScriptGenerator;
+import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
 import com.github.gumtreediff.actions.model.Action;
-import com.github.gumtreediff.gen.Generators;
+import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
-import com.github.gumtreediff.tree.ITree;
 
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
@@ -142,15 +143,14 @@ public class TreeDiff {
 	}
 
 	public static List<com.github.gumtreediff.actions.model.Action> diffGumTree(File srcFile, File dstFile) throws Exception {
-		List<com.github.gumtreediff.actions.model.Action> actions = null;
-		com.github.gumtreediff.client.Run.initGenerators();
-		ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
-		ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
-		Matcher m = Matchers.getInstance().getMatcher(src, dst); // retrieve the default matcher
-		m.match();
-		ActionGenerator g = new ActionGenerator(src, dst, m.getMappings());
-		g.generate();
-		actions = g.getActions();
+		//Updated for GumTree 3.0.0 version.
+		com.github.gumtreediff.tree.Tree src = new JdtTreeGenerator().generateFrom().file(srcFile.getAbsolutePath()).getRoot();
+		com.github.gumtreediff.tree.Tree dst = new JdtTreeGenerator().generateFrom().file(dstFile.getAbsolutePath()).getRoot();
+		Matcher m = Matchers.getInstance().getMatcher();
+		MappingStore mappings = m.match(src, dst);
+		EditScriptGenerator g = new SimplifiedChawatheScriptGenerator();
+		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
+		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
 
 		return actions;
 	}
@@ -176,14 +176,14 @@ public class TreeDiff {
 
 	public static List<GTAction> diffGumTreeWithGrouping(File srcFile, File dstFile) throws Exception {
 		List<GTAction> gtActions = new ArrayList<>();
-		com.github.gumtreediff.client.Run.initGenerators();
-		ITree src = Generators.getInstance().getTree(srcFile.getAbsolutePath()).getRoot();
-		ITree dst = Generators.getInstance().getTree(dstFile.getAbsolutePath()).getRoot();
-		Matcher m = Matchers.getInstance().getMatcher(src, dst); // retrieve the default matcher
-		m.match();
-		ActionGenerator g = new ActionGenerator(src, dst, m.getMappings());
-		g.generate();
-		List<com.github.gumtreediff.actions.model.Action> actions = g.getActions();
+		//Updated for GumTree 3.0.0 version.
+		com.github.gumtreediff.tree.Tree src = new JdtTreeGenerator().generateFrom().file(srcFile.getAbsolutePath()).getRoot();
+		com.github.gumtreediff.tree.Tree dst = new JdtTreeGenerator().generateFrom().file(dstFile.getAbsolutePath()).getRoot();
+		Matcher m = Matchers.getInstance().getMatcher();
+		MappingStore mappings = m.match(src, dst);
+		EditScriptGenerator g = new SimplifiedChawatheScriptGenerator();
+		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
+		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
 		CompilationUnit srcCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(srcFile));
 		CompilationUnit dstCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(dstFile));
 		//Group actions.
@@ -202,13 +202,13 @@ public class TreeDiff {
 
 		//Bottom-up search to find a root action.
 		GTAction parent;
-		ITree parentNode;
+		com.github.gumtreediff.tree.Tree parentNode;
 		do {
 			parent = null;
 			parentNode = root.action.getNode().getParent();
 			if (parentNode != null) {
 				for (Action action : actions) {
-					if (action.getNode().getId() == parentNode.getId()
+					if (action.getNode() == parentNode
 							&& GTAction.getActionType(action).equals(root.actionType)) {
 						parent = new GTAction(action, srcCu, dstCu);
 						break;
@@ -231,9 +231,9 @@ public class TreeDiff {
 			attachedActions.clear();
 			//Find children of each target.
 			for(GTAction target : targetActions){
-				for (ITree child : target.action.getNode().getChildren()) {
+				for (com.github.gumtreediff.tree.Tree child : target.action.getNode().getChildren()) {
 					for (Action action : actions) {
-						if (action.getNode().getId() == child.getId()
+						if (action.getNode() == child
 								&& target.actionType.equals(GTAction.getActionType(action))) {
 							GTAction gta = new GTAction(action, srcCu, dstCu);
 							target.children.add(gta);
