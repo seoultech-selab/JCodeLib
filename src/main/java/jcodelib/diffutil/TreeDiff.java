@@ -34,6 +34,7 @@ import jcodelib.element.GTAction;
 import jcodelib.util.CodeUtils;
 import kr.ac.seoultech.selab.esscore.model.Script;
 import kr.ac.seoultech.selab.esscore.util.GTScriptConverter;
+import kr.ac.seoultech.selab.esscore.util.LASScriptConverter;
 import script.ScriptGenerator;
 import script.model.EditScript;
 import tree.Tree;
@@ -168,8 +169,8 @@ public class TreeDiff {
 		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
 		long endTime = System.currentTimeMillis();
 		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
-		//Convert to common script type. Ignore ImportDecl. flag must be false.
-		Script converted = GTScriptConverter.convert(actions, mappings, false);
+		//Convert to common script type. Not ignore ImportDecl. & combine tree edits.
+		Script converted = GTScriptConverter.convert(actions, mappings, false, true);
 		return new DiffResult(converted, endTime-startTime);
 	}
 
@@ -282,6 +283,18 @@ public class TreeDiff {
 		}
 
 		return null;
+	}
+
+	public static DiffResult diffLAS(String oldCode, String newCode) throws IOException {
+		long startTime = System.currentTimeMillis();
+		Tree before = tree.TreeBuilder.buildTreeFromSource(oldCode);
+		Tree after = tree.TreeBuilder.buildTreeFromSource(newCode);
+		EditScript script = ScriptGenerator.generateScript(before, after);
+		long endTime = System.currentTimeMillis();
+		Script converted = LASScriptConverter.convert(script);
+
+		return new DiffResult(converted, endTime - startTime);
+
 	}
 
 	public static void runCLDiff(String repo, String commitId, String outputDir) {
