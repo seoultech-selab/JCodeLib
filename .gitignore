@@ -28,3 +28,7 @@ hs_err_pid*
 bin
 target
 /.DS_Store
+.gradle/
+gradle
+/build
+gradlew*

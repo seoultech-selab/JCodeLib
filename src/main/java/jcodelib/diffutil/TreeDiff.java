@@ -32,6 +32,8 @@ import file.FileIOManager;
 import jcodelib.element.CDChange;
 import jcodelib.element.GTAction;
 import jcodelib.util.CodeUtils;
+import kr.ac.seoultech.selab.esscore.model.Script;
+import kr.ac.seoultech.selab.esscore.util.GTScriptConverter;
 import script.ScriptGenerator;
 import script.model.EditScript;
 import tree.Tree;
@@ -155,6 +157,23 @@ public class TreeDiff {
 		return actions;
 	}
 
+	public static DiffResult diffGumTree(String oldCode, String newCode) throws IOException {
+		//Estimate runtime for Script Collection.
+		long startTime = System.currentTimeMillis();
+		com.github.gumtreediff.tree.Tree src = new JdtTreeGenerator().generateFrom().string(oldCode).getRoot();
+		com.github.gumtreediff.tree.Tree dst = new JdtTreeGenerator().generateFrom().string(newCode).getRoot();
+		Matcher m = Matchers.getInstance().getMatcher();
+		MappingStore mappings = m.match(src, dst);
+		EditScriptGenerator g = new SimplifiedChawatheScriptGenerator();
+		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
+		long endTime = System.currentTimeMillis();
+		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
+		//Convert to common script type. Ignore ImportDecl. flag must be false.
+		Script converted = GTScriptConverter.convert(actions, mappings, false);
+		return new DiffResult(converted, endTime-startTime);
+	}
+
+
 	public static List<GTAction> groupGumTreeActions(File srcFile, File dstFile, List<com.github.gumtreediff.actions.model.Action> actions) {
 		List<GTAction> gtActions = new ArrayList<>();
 		try {
@@ -265,12 +284,12 @@ public class TreeDiff {
 		return null;
 	}
 
-	public static void runCLDiff(File srcFile, File dstFile) {
-
-	}
-
 	public static void runCLDiff(String repo, String commitId, String outputDir) {
 		CLDiffLocal CLDiffLocal = new CLDiffLocal();
 		CLDiffLocal.run(commitId,repo,outputDir);
+	}
+
+	public static void diffIJM(File srcFile, File dstFile) {
+
 	}
 }
