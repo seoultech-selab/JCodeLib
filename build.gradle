@@ -14,14 +14,16 @@ dependencies {
     implementation 'org.eclipse.jdt:org.eclipse.jdt.core:3.23.0'
     implementation 'org.jacoco:org.jacoco.core:0.8.6'
     implementation 'org.jacoco:org.jacoco.report:0.8.6'
+    implementation 'org.jacoco:org.jacoco.agent:0.8.6'    
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.9.0.202009080501-r'
-    implementation files('lib/gumtree-3.0.0/gumtree.jar')
-    implementation 'org.jacoco:org.jacoco.agent:0.8.6'
+    implementation fileTree(dir: 'lib/gumtree-2.1.2', include: ['*.jar'])
     implementation files('lib/commonlib.jar')
     implementation files('lib/changedistiller-0.0.1-SNAPSHOT-jar-with-dependencies.jar')
     implementation files('lib/CLDIFF-0.0.1.jar')
     implementation files('lib/las-1.0.0-SNAPSHOT.jar')
-    implementation project(':es-score-calculator')
+    implementation project(':es-score-calculator')    
+    implementation files('lib/at.aau.softwaredynamics.runner-1.0-SNAPSHOT-jar-with-dependencies.jar')
+    
 }
 
 group = 'kr.ac.seoultech.selab'

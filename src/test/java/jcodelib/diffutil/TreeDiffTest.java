@@ -1,53 +1,39 @@
 package jcodelib.diffutil;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import ch.uzh.ifi.seal.changedistiller.model.entities.SourceCodeChange;
-import jcodelib.element.CDChange;
+import jcodelib.element.IJMChange;
 
 public class TreeDiffTest {
 
 	@Test
-	public void testDiffCDChanges() {
-		File left = new File("resources/DiffTestBefore.java");
-		File right = new File("resources/DiffTestAfter.java");
+	public void testDiffIJM() {
+		File src = new File("resources/DiffTestBefore.java");
+		File dst = new File("resources/DiffTestAfter.java");
 		try {
-			List<SourceCodeChange> changes = TreeDiff.diffChangeDistiller(left, right);
-			List<CDChange> converted = TreeDiff.convertSourceCodeChanges(changes);
-			assertEquals(changes.size(), converted.size());
-			for(int i=0; i<changes.size(); i++) {
-				assertFalse(changes.get(i).getChangeType().toString().equals(converted.get(i).getChangeType()));
+			DiffResult res = TreeDiff.diffIJM(src, dst);
+			List<IJMChange> changes = (List<IJMChange>)res.getScript();
+			Map<String, Integer> count = new HashMap<>();
+			for(IJMChange change : changes) {
+				String key = change.getChangeType() + ":" + change.getEntityType();
+				System.out.println(key);
+				count.compute(key, (k, v) -> v==null ? 1 : v+1);
 			}
+			assertEquals(4, changes.size());
+			assertEquals(2, (int)count.get("DEL:IfStatement"));
+			assertEquals(1, (int)count.get("INS:ReturnStatement"));
+			assertEquals(1, (int)count.get("INS:VariableDeclarationStatement"));
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-	}
-
-	@Ignore
-	@Test
-	public void testDiffCDChanges2() {
-		File left = new File("resources/DiffTestBefore.java");
-		File right = new File("resources/DiffTestAfter.java");
-		try {
-			List<CDChange> changes = new ArrayList<>();
-			changes.add(new CDChange("INS", "xx", 186, 207));
-			changes.add(new CDChange("INS", "xx", 214, 238));
-			changes.add(new CDChange("DEL", "xx", 121, 152));
-			changes.add(new CDChange("DEL", "xx", 256, 285));
-			changes.add(new CDChange("MOV", "xx", 98, 197));
-			changes.add(new CDChange("MOV", "xx", 166, 197));
-			TreeDiff.updateEntityTypes(left, right, changes);
-
-		} catch (Exception e) {
-			e.printStackTrace();
+			fail();
 		}
 	}
 

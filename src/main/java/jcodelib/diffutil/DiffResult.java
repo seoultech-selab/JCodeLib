@@ -4,28 +4,28 @@ import kr.ac.seoultech.selab.esscore.model.Script;
 
 public class DiffResult {
 
-	private Script script;
+	private Object script;
 	private long runtime;
 
 	public DiffResult() {
 		this(new Script(), 0);
 	}
 
-	public DiffResult(Script script) {
+	public DiffResult(Object script) {
 		this(script, 0);
 	}
 
-	public DiffResult(Script script, long runtime) {
+	public DiffResult(Object script, long runtime) {
 		super();
 		this.script = script;
 		this.runtime = runtime;
 	}
 
-	public Script getScript() {
+	public Object getScript() {
 		return script;
 	}
 
-	public void setScript(Script script) {
+	public void setScript(Object script) {
 		this.script = script;
 	}
 

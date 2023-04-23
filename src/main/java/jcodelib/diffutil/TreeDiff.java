@@ -8,16 +8,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.eclipse.jdt.core.dom.CompilationUnit;
-
-import com.github.gumtreediff.actions.EditScriptGenerator;
-import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
-import com.github.gumtreediff.actions.model.Action;
-import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
-import com.github.gumtreediff.matchers.MappingStore;
+import com.github.gumtreediff.gen.TreeGenerator;
+import com.github.gumtreediff.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.matchers.CompositeMatchers;
 import com.github.gumtreediff.matchers.Matcher;
-import com.github.gumtreediff.matchers.Matchers;
 
+import at.aau.softwaredynamics.classifier.AbstractJavaChangeClassifier;
+import at.aau.softwaredynamics.classifier.JChangeClassifier;
+import at.aau.softwaredynamics.classifier.NonClassifyingClassifier;
+import at.aau.softwaredynamics.classifier.entities.FileChangeSummary;
+import at.aau.softwaredynamics.gen.DocIgnoringTreeGenerator;
+import at.aau.softwaredynamics.gen.OptimizedJdtTreeGenerator;
+import at.aau.softwaredynamics.gen.SpoonTreeGenerator;
+import at.aau.softwaredynamics.matchers.JavaMatchers;
+import at.aau.softwaredynamics.runner.util.ClassifierFactory;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
 import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
@@ -30,10 +34,9 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.Update;
 import edu.fdu.se.cldiff.CLDiffLocal;
 import file.FileIOManager;
 import jcodelib.element.CDChange;
-import jcodelib.element.GTAction;
+import jcodelib.element.IJMChange;
 import jcodelib.util.CodeUtils;
 import kr.ac.seoultech.selab.esscore.model.Script;
-import kr.ac.seoultech.selab.esscore.util.GTScriptConverter;
 import kr.ac.seoultech.selab.esscore.util.LASScriptConverter;
 import script.ScriptGenerator;
 import script.model.EditScript;
@@ -145,133 +148,6 @@ public class TreeDiff {
 		}
 	}
 
-	public static List<com.github.gumtreediff.actions.model.Action> diffGumTree(File srcFile, File dstFile) throws Exception {
-		//Updated for GumTree 3.0.0 version.
-		com.github.gumtreediff.tree.Tree src = new JdtTreeGenerator().generateFrom().file(srcFile.getAbsolutePath()).getRoot();
-		com.github.gumtreediff.tree.Tree dst = new JdtTreeGenerator().generateFrom().file(dstFile.getAbsolutePath()).getRoot();
-		Matcher m = Matchers.getInstance().getMatcher();
-		MappingStore mappings = m.match(src, dst);
-		EditScriptGenerator g = new SimplifiedChawatheScriptGenerator();
-		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
-		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
-
-		return actions;
-	}
-
-	public static DiffResult diffGumTree(String oldCode, String newCode) throws IOException {
-		//Estimate runtime for Script Collection.
-		long startTime = System.currentTimeMillis();
-		com.github.gumtreediff.tree.Tree src = new JdtTreeGenerator().generateFrom().string(oldCode).getRoot();
-		com.github.gumtreediff.tree.Tree dst = new JdtTreeGenerator().generateFrom().string(newCode).getRoot();
-		Matcher m = Matchers.getInstance().getMatcher();
-		MappingStore mappings = m.match(src, dst);
-		EditScriptGenerator g = new SimplifiedChawatheScriptGenerator();
-		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
-		long endTime = System.currentTimeMillis();
-		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
-		//Convert to common script type. Not ignore ImportDecl. & combine tree edits.
-		Script converted = GTScriptConverter.convert(actions, mappings, false, true);
-		return new DiffResult(converted, endTime-startTime);
-	}
-
-
-	public static List<GTAction> groupGumTreeActions(File srcFile, File dstFile, List<com.github.gumtreediff.actions.model.Action> actions) {
-		List<GTAction> gtActions = new ArrayList<>();
-		try {
-			CompilationUnit srcCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(srcFile));
-			CompilationUnit dstCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(dstFile));
-			//Group actions.
-			while(actions.size() > 0){
-				Action action = actions.get(0);
-				GTAction gtAction = new GTAction(action, srcCu, dstCu);
-				gtAction = attachActions(gtAction, actions, srcCu, dstCu);
-				gtActions.add(gtAction);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return gtActions;
-	}
-
-	public static List<GTAction> diffGumTreeWithGrouping(File srcFile, File dstFile) throws Exception {
-		List<GTAction> gtActions = new ArrayList<>();
-		//Updated for GumTree 3.0.0 version.
-		com.github.gumtreediff.tree.Tree src = new JdtTreeGenerator().generateFrom().file(srcFile.getAbsolutePath()).getRoot();
-		com.github.gumtreediff.tree.Tree dst = new JdtTreeGenerator().generateFrom().file(dstFile.getAbsolutePath()).getRoot();
-		Matcher m = Matchers.getInstance().getMatcher();
-		MappingStore mappings = m.match(src, dst);
-		EditScriptGenerator g = new SimplifiedChawatheScriptGenerator();
-		com.github.gumtreediff.actions.EditScript script = g.computeActions(mappings);
-		List<com.github.gumtreediff.actions.model.Action> actions = script.asList();
-		CompilationUnit srcCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(srcFile));
-		CompilationUnit dstCu = CodeUtils.getCompilationUnit(FileIOManager.getContent(dstFile));
-		//Group actions.
-		while(actions.size() > 0){
-			Action action = actions.get(0);
-			GTAction gtAction = new GTAction(action, srcCu, dstCu);
-			gtAction = attachActions(gtAction, actions, srcCu, dstCu);
-			gtActions.add(gtAction);
-		}
-		return gtActions;
-	}
-
-	private static GTAction attachActions(
-			GTAction gtAction, List<Action> actions, CompilationUnit srcCu, CompilationUnit dstCu) {
-		GTAction root = gtAction;
-
-		//Bottom-up search to find a root action.
-		GTAction parent;
-		com.github.gumtreediff.tree.Tree parentNode;
-		do {
-			parent = null;
-			parentNode = root.action.getNode().getParent();
-			if (parentNode != null) {
-				for (Action action : actions) {
-					if (action.getNode() == parentNode
-							&& GTAction.getActionType(action).equals(root.actionType)) {
-						parent = new GTAction(action, srcCu, dstCu);
-						break;
-					}
-				}
-			}
-			//Switch the root.
-			if(parent != null){
-				root = parent;
-			}
-		} while (parent != null);
-
-		//Top-down search for children.
-		List<GTAction> targetActions = new ArrayList<>();
-		List<GTAction> attachedActions = new ArrayList<>();
-		targetActions.add(root);
-		actions.remove(root.action);
-		do {
-			targetActions.addAll(attachedActions);
-			attachedActions.clear();
-			//Find children of each target.
-			for(GTAction target : targetActions){
-				for (com.github.gumtreediff.tree.Tree child : target.action.getNode().getChildren()) {
-					for (Action action : actions) {
-						if (action.getNode() == child
-								&& target.actionType.equals(GTAction.getActionType(action))) {
-							GTAction gta = new GTAction(action, srcCu, dstCu);
-							target.children.add(gta);
-							attachedActions.add(gta);
-							break;
-						}
-					}
-				}
-			}
-			//Remove all attached actions.
-			for(GTAction gta : attachedActions){
-				actions.remove(gta.action);
-			}
-		} while (attachedActions.size() > 0 && actions.size() > 0);
-
-		return root;
-	}
-
 	public static EditScript diffLAS(File srcFile, File dstFile){
 		try {
 			Tree before = tree.TreeBuilder.buildTreeFromFile(srcFile);
@@ -302,7 +178,95 @@ public class TreeDiff {
 		CLDiffLocal.run(commitId,repo,outputDir);
 	}
 
-	public static void diffIJM(File srcFile, File dstFile) {
+	public static DiffResult diffIJM(File srcFile, File dstFile) {
+		//Default options from the example: -c None -m IJM -w FS -g OTG
+		return diffIJM(srcFile, dstFile, "None", "IJM", "OTG");
+	}
 
+	public static DiffResult diffIJM(File srcFile, File dstFile, String optClassifier, String optMatcher, String optGenerator) {
+		Class<? extends AbstractJavaChangeClassifier> classifierType = getClassifierType(optClassifier);
+		Class<? extends Matcher> matcher = getMatcherTypes(optMatcher);
+		TreeGenerator generator = getTreeGenerator(optGenerator);
+
+		ClassifierFactory factory = new ClassifierFactory(classifierType, matcher, generator);
+		FileChangeSummary summary = new FileChangeSummary("", "", srcFile.getName(), dstFile.getName());
+
+		try {
+			String oldCode = FileIOManager.getContent(srcFile);
+			String newCode = FileIOManager.getContent(dstFile);
+
+			long startTime = System.currentTimeMillis();
+			AbstractJavaChangeClassifier classifier = factory.createClassifier();
+			try {
+				classifier.classify(oldCode, newCode);
+				summary.setChanges(classifier.getCodeChanges());
+				summary.setMetrics(classifier.getMetrics());
+			} catch (OutOfMemoryError e) {
+				e.printStackTrace();
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
+			long endTime = System.currentTimeMillis();
+			List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes = classifier.getCodeChanges();
+
+			return new DiffResult(getIJMChanges(changes), endTime-startTime);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public static List<IJMChange> getIJMChanges(List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes) {
+		//Group changes.
+		List<IJMChange> grouped = new ArrayList<>();
+		for(at.aau.softwaredynamics.classifier.entities.SourceCodeChange change : changes) {
+			//No parent changes indicates this is the change subtree root.
+			if(change.getParentChanges().size() == 0) {
+				grouped.add(convert(change));
+			}
+		}
+		return grouped;
+	}
+
+	public static IJMChange convert(at.aau.softwaredynamics.classifier.entities.SourceCodeChange change) {
+		IJMChange converted = new IJMChange(change);
+		for(at.aau.softwaredynamics.classifier.entities.SourceCodeChange child : change.getChildrenChanges()) {
+			converted.addChild(convert(child));
+		}
+		return converted;
+	}
+
+	private static Class<? extends Matcher> getMatcherTypes(String option) {
+		switch(option) {
+		case "GT":
+			return CompositeMatchers.ClassicGumtree.class;
+		case "IJM":
+			return JavaMatchers.IterativeJavaMatcher_V2.class;
+		case "IJM_Spoon":
+			return JavaMatchers.IterativeJavaMatcher_Spoon.class;
+		}
+
+		return null;
+	}
+
+	private static Class<? extends AbstractJavaChangeClassifier> getClassifierType(String option) {
+		switch (option) {
+		case "Java": return JChangeClassifier.class;
+		case "None": return NonClassifyingClassifier.class;
+		default: return JChangeClassifier.class;
+		}
+	}
+
+	private static TreeGenerator getTreeGenerator(String option) {
+		switch (option)
+		{
+		case "OTG": return new OptimizedJdtTreeGenerator();
+		case "JTG": return new JdtTreeGenerator();
+		case "JTG1": return new DocIgnoringTreeGenerator();
+		case "SPOON":
+			return new SpoonTreeGenerator();
+		}
+		return null;
 	}
 }
