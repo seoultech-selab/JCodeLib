@@ -168,8 +168,9 @@ public class TreeDiff {
 		EditScript script = ScriptGenerator.generateScript(before, after);
 		long endTime = System.currentTimeMillis();
 		Script converted = LASScriptConverter.convert(script);
+		DiffResult result = new DiffResult(converted, endTime - startTime);
 
-		return new DiffResult(converted, endTime - startTime);
+		return result;
 
 	}
 
