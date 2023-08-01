@@ -179,12 +179,54 @@ public class TreeDiff {
 		CLDiffLocal.run(commitId,repo,outputDir);
 	}
 
-	public static DiffResult diffIJM(File srcFile, File dstFile) {
+	public static List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> diffIJMOriginal(File srcFile, File dstFile) {
 		//Default options from the example: -c None -m IJM -w FS -g OTG
-		return diffIJM(srcFile, dstFile, "None", "IJM", "OTG");
+		return diffIJMOriginal(srcFile, dstFile, "None", "IJM", "OTG");
 	}
 
-	public static DiffResult diffIJM(File srcFile, File dstFile, String optClassifier, String optMatcher, String optGenerator) {
+	public static List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> diffIJMOriginal(File srcFile, File dstFile, String optClassifier, String optMatcher, String optGenerator) {
+		Class<? extends AbstractJavaChangeClassifier> classifierType = getClassifierType(optClassifier);
+		Class<? extends Matcher> matcher = getMatcherTypes(optMatcher);
+		TreeGenerator generator = getTreeGenerator(optGenerator);
+
+		ClassifierFactory factory = new ClassifierFactory(classifierType, matcher, generator);
+		FileChangeSummary summary = new FileChangeSummary("", "", srcFile.getName(), dstFile.getName());
+
+		try {
+			String oldCode = FileIOManager.getContent(srcFile);
+			String newCode = FileIOManager.getContent(dstFile);
+
+			AbstractJavaChangeClassifier classifier = factory.createClassifier();
+			try {
+				classifier.classify(oldCode, newCode);
+				summary.setChanges(classifier.getCodeChanges());
+				summary.setMetrics(classifier.getMetrics());
+			} catch (OutOfMemoryError e) {
+				e.printStackTrace();
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
+			List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes = classifier.getCodeChanges();
+
+			return changes;
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public static DiffResult diffIJM(File srcFile, File dstFile) {
+		//Default options from the example: -c None -m IJM -w FS -g OTG
+		return diffIJM(srcFile, dstFile, "None", "IJM", "OTG", false);
+	}
+
+	public static DiffResult diffIJM(File srcFile, File dstFile, boolean subtree) {
+		//Default options from the example: -c None -m IJM -w FS -g OTG
+		return diffIJM(srcFile, dstFile, "None", "IJM", "OTG", subtree);
+	}
+
+	public static DiffResult diffIJM(File srcFile, File dstFile, String optClassifier, String optMatcher, String optGenerator, boolean subtree) {
 		Class<? extends AbstractJavaChangeClassifier> classifierType = getClassifierType(optClassifier);
 		Class<? extends Matcher> matcher = getMatcherTypes(optMatcher);
 		TreeGenerator generator = getTreeGenerator(optGenerator);
@@ -210,7 +252,7 @@ public class TreeDiff {
 			long endTime = System.currentTimeMillis();
 			List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes = classifier.getCodeChanges();
 
-			return new DiffResult(getIJMChanges(changes), endTime-startTime);
+			return new DiffResult(getIJMChanges(changes, subtree), endTime-startTime);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -218,13 +260,23 @@ public class TreeDiff {
 		}
 	}
 
-	public static List<IJMChange> getIJMChanges(List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes) {
+	public static List<IJMChange> getIJMChanges(List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes, boolean subtree) {
 		//Group changes.
 		List<IJMChange> grouped = new ArrayList<>();
 		for(at.aau.softwaredynamics.classifier.entities.SourceCodeChange change : changes) {
 			//No parent changes indicates this is the change subtree root.
-			if(change.getParentChanges().size() == 0) {
+			if(!subtree || change.getParentChanges().size() == 0) {
 				grouped.add(convert(change));
+			} else {
+				//The change's direct parent node has different change type, also add this change as the subtree root.
+				List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> nodeChanges
+				= at.aau.softwaredynamics.classifier.entities.SourceCodeChange.treeIDChangeMap.get(change.getNode().getParent());
+				for(at.aau.softwaredynamics.classifier.entities.SourceCodeChange c : nodeChanges) {
+					if(!c.getAction().getName().equals(change.getAction().getName())) {
+						grouped.add(convert(change));
+						break;
+					}
+				}
 			}
 		}
 		return grouped;
