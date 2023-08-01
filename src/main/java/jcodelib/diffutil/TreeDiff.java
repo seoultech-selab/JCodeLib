@@ -217,8 +217,8 @@ public class TreeDiff {
 	}
 
 	public static DiffResult diffIJM(File srcFile, File dstFile) {
-		//Default options from the example: -c None -m IJM -w FS -g OTG
-		return diffIJM(srcFile, dstFile, "None", "IJM", "OTG", false);
+		//Default options from the example: -c None -m IJM -w FS -g OTG, with subtree edits grouped.
+		return diffIJM(srcFile, dstFile, "None", "IJM", "OTG", true);
 	}
 
 	public static DiffResult diffIJM(File srcFile, File dstFile, boolean subtree) {

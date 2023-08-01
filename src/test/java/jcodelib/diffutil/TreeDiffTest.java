@@ -21,16 +21,17 @@ public class TreeDiffTest {
 		File src = new File("resources/DiffTestBefore.java");
 		File dst = new File("resources/DiffTestAfter.java");
 		try {
-			DiffResult res = TreeDiff.diffIJM(src, dst);
+			DiffResult res = TreeDiff.diffIJM(src, dst, false);
 			List<IJMChange> changes = (List<IJMChange>)res.getScript();
 			Map<String, Integer> count = updateCount(changes);
+
 			assertEquals(41, changes.size());
 			assertEquals(2, (int)count.get("DEL:IfStatement"));
 			assertEquals(2, (int)count.get("INS:ReturnStatement"));
 			assertEquals(1, (int)count.get("INS:VariableDeclarationStatement"));
 			assertEquals(2, (int)count.get("MOV:InfixExpression"));
 
-			res = TreeDiff.diffIJM(src, dst, true);
+			res = TreeDiff.diffIJM(src, dst);
 			changes = (List<IJMChange>)res.getScript();
 			count = updateCount(changes);
 			assertEquals(13, changes.size());
