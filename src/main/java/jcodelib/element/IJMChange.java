@@ -3,6 +3,7 @@ package jcodelib.element;
 import java.util.ArrayList;
 import java.util.List;
 
+import at.aau.softwaredynamics.classifier.entities.NodeInfo;
 import at.aau.softwaredynamics.classifier.entities.SourceCodeChange;
 import jcodelib.util.CodeUtils;
 
@@ -34,12 +35,17 @@ public class IJMChange {
 		super();
 		this.changeType = change.getAction().getName();
 		this.entityType = CodeUtils.getTypeName(change.getNodeType());
-		this.oldStartPos = change.getSrcInfo().getPosition();
+		this.oldStartPos = getFixedPosition(change.getSrcInfo());
 		this.oldLength = change.getSrcInfo().getLength();
-		this.newStartPos = change.getDstInfo().getPosition();
+		this.newStartPos = getFixedPosition(change.getDstInfo());
 		this.newLength = change.getDstInfo().getLength();
 		this.parent = null;
 		this.children = new ArrayList<>();
+	}
+
+	public int getFixedPosition(NodeInfo info) {
+		//Need to clear out line feeds for the actual start position in code.
+		return info.getPosition() - info.getStartLineNumber() + 1;
 	}
 
 	public String getChangeType() {
