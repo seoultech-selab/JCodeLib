@@ -238,7 +238,6 @@ public class TreeDiff {
 			String oldCode = FileIOManager.getContent(srcFile);
 			String newCode = FileIOManager.getContent(dstFile);
 
-			long startTime = System.currentTimeMillis();
 			AbstractJavaChangeClassifier classifier = factory.createClassifier();
 			try {
 				classifier.classify(oldCode, newCode);
@@ -249,10 +248,9 @@ public class TreeDiff {
 			} catch (Throwable t) {
 				t.printStackTrace();
 			}
-			long endTime = System.currentTimeMillis();
 			List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes = classifier.getCodeChanges();
 
-			return new DiffResult(getIJMChanges(changes, subtree), endTime-startTime);
+			return new DiffResult(getIJMChanges(changes, subtree), summary.getMetrics().getTotalTime());
 
 		} catch (IOException e) {
 			e.printStackTrace();
