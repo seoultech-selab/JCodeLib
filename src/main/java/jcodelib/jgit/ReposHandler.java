@@ -66,7 +66,7 @@ public class ReposHandler {
 
 	public static List<String> getAllCommitIds(Git git) throws IOException, NoHeadException, GitAPIException {
 		Iterable<RevCommit> commits = git.log().all().call();
-		List<String> commitIds = new ArrayList<String>();
+		List<String> commitIds = new ArrayList<>();
 		for (RevCommit commit : commits) {
 			commitIds.add(commit.getId().getName());
 		}
@@ -125,7 +125,7 @@ public class ReposHandler {
 
 	public static List<String> getChangedJavaFiles(Repository repos, String oldCommitId, String newCommitId)
 			throws MissingObjectException, IncorrectObjectTypeException, IOException, GitAPIException {
-		List<String> changedJavaFiles = new ArrayList<String>();
+		List<String> changedJavaFiles = new ArrayList<>();
 
 		//Get name and status.
 		AbstractTreeIterator oldTreeParser = getTreeParser(repos, oldCommitId);
