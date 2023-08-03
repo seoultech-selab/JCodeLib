@@ -291,7 +291,8 @@ public class TreeDiff {
 		Tree after = tree.TreeBuilder.buildTreeFromSource(newCode);
 		EditScript script = ScriptGenerator.generateScript(before, after);
 		long endTime = System.currentTimeMillis();
-		Script converted = LASScriptConverter.convert(script);
+		//make sure imports are not ignored.
+		Script converted = LASScriptConverter.convert(script, false);
 
 		return new DiffResult(converted, endTime - startTime);
 

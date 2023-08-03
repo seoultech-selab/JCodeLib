@@ -2,16 +2,22 @@ package jcodelib.diffutil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import ch.uzh.ifi.seal.changedistiller.model.entities.SourceCodeChange;
 import jcodelib.element.CDChange;
+import kr.ac.seoultech.selab.esscore.model.ESNodeEdit;
+import kr.ac.seoultech.selab.esscore.model.Script;
+import kr.ac.seoultech.selab.esscore.util.FileHandler;
 
 public class TreeDiffTest {
 
@@ -46,6 +52,24 @@ public class TreeDiffTest {
 			changes.add(new CDChange("MOV", "xx", 166, 197));
 			TreeDiff.updateEntityTypes(left, right, changes);
 
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void testDiffGumtree() {
+		File left = new File("resources/DiffTestBefore.java");
+		File right = new File("resources/DiffTestAfter.java");
+		try {
+			String oldCode = FileHandler.readFile(left);
+			String newCode = FileHandler.readFile(right);
+			DiffResult res = TreeDiff.diffGumTree(oldCode, newCode);
+			Script script = res.getScript();
+			assertEquals(32, script.editOps.size());
+			assertTrue(script.editOps.stream().anyMatch(op -> op.type.equals(ESNodeEdit.OP_MOVE)));
+			Map<Object, List<ESNodeEdit>> count = script.editOps.stream().collect(Collectors.groupingBy(op -> op.type));
+			assertEquals(11, count.get(ESNodeEdit.OP_MOVE).size());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
