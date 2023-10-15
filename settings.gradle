@@ -3,5 +3,3 @@
  */
 
 rootProject.name = 'jcodelib'
-include ':es-score-calculator'
-project(':es-score-calculator').projectDir = new File('../ESScoreCalculator')

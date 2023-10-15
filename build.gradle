@@ -21,11 +21,24 @@ dependencies {
     implementation files('lib/changedistiller-0.0.1-SNAPSHOT-jar-with-dependencies.jar')
     implementation files('lib/CLDIFF-0.0.1.jar')
     implementation files('lib/las-1.0.0-SNAPSHOT.jar')
-    implementation project(':es-score-calculator')    
+    implementation files('lib/es-score-calculator-1.0.0-IJM.jar')    
     implementation files('lib/at.aau.softwaredynamics.runner-1.0-SNAPSHOT-jar-with-dependencies.jar')
-    
+
+	testImplementation 'junit:junit:4.13'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.2.0'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 group = 'kr.ac.seoultech.selab'
-version = '1.0.0-SNAPSHOT'
+version = '1.0.0-IJM'
 sourceCompatibility = '1.9'
+
+task fatJar(type: Jar) {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+    archiveFileName = "${project.name}-${project.version}-all-in-one.jar"
+}

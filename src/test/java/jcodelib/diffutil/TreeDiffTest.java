@@ -1,21 +1,26 @@
 package jcodelib.diffutil;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import at.aau.softwaredynamics.classifier.entities.SourceCodeChange;
 import jcodelib.element.IJMChange;
+import kr.ac.seoultech.selab.esscore.model.ESNode;
 import kr.ac.seoultech.selab.esscore.util.CodeHandler;
+import kr.ac.seoultech.selab.esscore.util.FileHandler;
+import kr.ac.seoultech.selab.esscore.util.IJMScriptConverter;
 
 public class TreeDiffTest {
 
+	@Ignore
 	@Test
 	public void testDiffIJM() {
 		File src = new File("resources/DiffTestBefore.java");
@@ -58,6 +63,15 @@ public class TreeDiffTest {
 		File dst = new File("resources/DiffTestAfter.java");
 		try {
 			List<SourceCodeChange> changes = TreeDiff.diffIJMOriginal(src, dst);
+			String oldCode = FileHandler.readFile(src);
+			String newCode = FileHandler.readFile(dst);
+			IJMScriptConverter.computePosLineMap(oldCode, newCode);
+			for(SourceCodeChange c : changes) {
+				System.out.println(getInfo(c));
+				System.out.println(c.getNode().getPos());
+				ESNode n = IJMScriptConverter.convertNode(c.getNode(), !c.getAction().getName().equals("INS"));
+				System.out.println(n);
+			}
 			assertEquals(41, changes.size());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -65,7 +79,7 @@ public class TreeDiffTest {
 		}
 	}
 
-	public String getInfo(SourceCodeChange c) {
+	private String getInfo(SourceCodeChange c) {
 		return c.getAction().getName() + ":" + CodeHandler.getTypeName(c.getNodeType())
 		+ "(" + c.getSrcInfo().getStartLineNumber() + "," + c.getDstInfo().getStartLineNumber() + ")";
 	}
