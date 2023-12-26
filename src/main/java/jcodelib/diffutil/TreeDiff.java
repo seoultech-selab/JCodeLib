@@ -37,6 +37,7 @@ import jcodelib.element.CDChange;
 import jcodelib.element.IJMChange;
 import jcodelib.util.CodeUtils;
 import kr.ac.seoultech.selab.esscore.model.Script;
+import kr.ac.seoultech.selab.esscore.util.IJMScriptConverter;
 import kr.ac.seoultech.selab.esscore.util.LASScriptConverter;
 import script.ScriptGenerator;
 import script.model.EditScript;
@@ -249,10 +250,12 @@ public class TreeDiff {
 				t.printStackTrace();
 			}
 			List<at.aau.softwaredynamics.classifier.entities.SourceCodeChange> changes = classifier.getCodeChanges();
+			Script script = IJMScriptConverter.convert(changes);
+			DiffResult result = new DiffResult(script, summary.getMetrics().getTotalTime());
 
-			return new DiffResult(getIJMChanges(changes, subtree), summary.getMetrics().getTotalTime());
+			return result;
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}

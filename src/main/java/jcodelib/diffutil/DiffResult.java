@@ -8,7 +8,7 @@ import script.model.EditScript;
 
 public class DiffResult {
 
-	private Object script;
+	private Script script;
 	private long runtime;
 	private Map<String, Object> metaInfo;
 	private static final String EXACT_MATCH = "exact";
@@ -21,22 +21,22 @@ public class DiffResult {
 		this(new Script(), 0);
 	}
 
-	public DiffResult(Object script) {
+	public DiffResult(Script script) {
 		this(script, 0);
 	}
 
-	public DiffResult(Object script, long runtime) {
+	public DiffResult(Script script, long runtime) {
 		super();
 		this.script = script;
 		this.runtime = runtime;
 		this.metaInfo = new HashMap<>();
 	}
 
-	public Object getScript() {
+	public Script getScript() {
 		return script;
 	}
 
-	public void setScript(Object script) {
+	public void setScript(Script script) {
 		this.script = script;
 	}
 
