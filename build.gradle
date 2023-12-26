@@ -33,7 +33,7 @@ test {
 }
 
 group = 'kr.ac.seoultech.selab'
-version = '1.0.0-IJM'
+version = '1.0.1-IJM'
 sourceCompatibility = '1.9'
 
 task fatJar(type: Jar) {
