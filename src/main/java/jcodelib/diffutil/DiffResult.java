@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import kr.ac.seoultech.selab.esscore.model.Script;
-import script.model.EditScript;
+//import script.model.EditScript;
 
 public class DiffResult {
 
@@ -72,12 +72,11 @@ public class DiffResult {
 		return (int)metaInfo.getOrDefault(DiffResult.EXACT_MATCH_COUNT, 0);
 	}
 
-	public void updateMatchCount(EditScript script) {
-		metaInfo.put(DiffResult.EXACT_MATCH, script.exactMatch);
-		metaInfo.put(DiffResult.SIMILAR_MATCH, script.similarMatch);
-		metaInfo.put(DiffResult.FOLLOWUP_MATCH, script.followupMatch);
-		metaInfo.put(DiffResult.LEAF_MATCH, script.leafMatch);
-		metaInfo.put(DiffResult.EXACT_MATCH_COUNT, script.exactMatchCount);
-	}
-
+//	public void updateMatchCount(EditScript script) {
+//		metaInfo.put(DiffResult.EXACT_MATCH, script.exactMatch);
+//		metaInfo.put(DiffResult.SIMILAR_MATCH, script.similarMatch);
+//		metaInfo.put(DiffResult.FOLLOWUP_MATCH, script.followupMatch);
+//		metaInfo.put(DiffResult.LEAF_MATCH, script.leafMatch);
+//		metaInfo.put(DiffResult.EXACT_MATCH_COUNT, script.exactMatchCount);
+//	}
 }
